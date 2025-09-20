@@ -75,16 +75,26 @@ class LCD_1inch14(framebuf.FrameBuffer):
         self.swap(); self.spi.write(self.buffer); self.swap()
         self.cs(1)
 
-# --- high-level interface ---
 pwm = PWM(Pin(BL))
 pwm.freq(1000)
 pwm.duty_u16(65535)
 lcd = LCD_1inch14()
 
-def show_text(text, x=10, y=60, color=0xFFFF, clear=True):
+def show_text(text, x=10, y=60, color=0xFFFF, clear=True, scale=1):
     if clear:
         lcd.fill(0x0000)
-    lcd.text(text, x, y, color)
+    if scale == 1:
+        lcd.text(text, x, y, color)
+    else:
+        for i, ch in enumerate(text):
+            fb = framebuf.FrameBuffer(bytearray(8*8), 8, 8, framebuf.MONO_HLSB)
+            fb.text(ch, 0, 0, 1)
+            for cx in range(8):
+                for cy in range(8):
+                    if fb.pixel(cx, cy):
+                        for dx in range(scale):
+                            for dy in range(scale):
+                                lcd.pixel(x + i*8*scale + cx*scale + dx, y + cy*scale + dy, color)
     lcd.show()
 
 def clear(color=0x0000):
